@@ -32,11 +32,11 @@ No malicious actor, unauthorized access, or use of the elevated permissions is e
 | Initiating identity | Assumed-role ARN for `AccountFullAccessRole`; account portion obscured in evidence |
 | Source IP | `45.134.142.210` — operator's VPN |
 
-[Screenshot 13](../screenshots/13-real-iam-privilege-escalation-alert.png) shows the SNS-delivered email, its CRITICAL subject, and the above event context. The raw CloudTrail JSON for this final attachment was not supplied; the attachment fields are supported by the delivered finding and the operator's test record.
+[Screenshot 11](../screenshots/11-real-iam-privilege-escalation-alert.png) shows the SNS-delivered email, its CRITICAL subject, and the above event context. The raw CloudTrail JSON for this final attachment was not supplied; the attachment fields are supported by the delivered finding and the operator's test record.
 
-[Screenshot 14](../screenshots/14-iam-privilege-remediation.png) shows the removal event for the same user and policy. It displays log timestamp `2026-10-12T19:39:15.471-04:00` and event ID `713773e9-88a1-4d9e-bb5d-ac06837d003f`. The table field is `@timestamp`; without raw JSON, do not treat its milliseconds as an independently verified CloudTrail `eventTime`.
+[Screenshot 12](../screenshots/12-iam-privilege-remediation.png) shows the removal event for the same user and policy. It displays log timestamp `2026-10-12T19:39:15.471-04:00` and event ID `713773e9-88a1-4d9e-bb5d-ac06837d003f`. The table field is `@timestamp`; without raw JSON, do not treat its milliseconds as an independently verified CloudTrail `eventTime`.
 
-[Screenshot 10](../screenshots/10-real-iam-cloudtrail-events.png) shows earlier real attachment/detachment activity around 01:10 EDT with different event IDs. It is supporting evidence of IAM telemetry, not the final 23:37 UTC attachment.
+[Screenshot 08](../screenshots/08-real-iam-cloudtrail-events.png) shows earlier real attachment/detachment activity around 01:10 EDT with different event IDs. It is supporting evidence of IAM telemetry, not the final 23:37 UTC attachment.
 
 ## Investigation methodology
 
@@ -65,8 +65,8 @@ EDT is UTC−04:00. All entries below are on October 12, 2026.
 | Activity | UTC | EDT | Basis |
 |---|---|---|---|
 | Attach AdministratorAccess | 23:37:33 | 19:37:33 | Finding event time and operator record |
-| Automatic CRITICAL email | Exact timestamp not retained | UI shows 19:39, minute precision | Screenshot 13 |
-| Manual policy removal | Approximately 23:39:15 | Approximately 19:39:15 | Operator record and screenshot 14 |
+| Automatic CRITICAL email | Exact timestamp not retained | UI shows 19:39, minute precision | Screenshot 11 |
+| Manual policy removal | Approximately 23:39:15 | Approximately 19:39:15 | Operator record and screenshot 12 |
 | Post-remediation verification | Not recorded | Not recorded | Operator-reported checks |
 
 The approximately 102-second interval from attachment to removal reflects this exercise's manual response. Alert delivery is only visible at minute precision, so exact detection and notification latency cannot be calculated.
@@ -81,7 +81,7 @@ Post-test verification confirmed:
 - No IAM group memberships.
 - No access keys.
 
-These final-state checks are supplied by the operator. Screenshot 14 proves the removal event, but does not independently prove all three inventory checks. Screenshot 03 is a pre-test baseline, not post-remediation evidence. A complete effective-permission assessment was not supplied.
+These final-state checks are supplied by the operator. Screenshot 12 proves the removal event, but does not independently prove all three inventory checks. Screenshot 03 is a pre-test baseline, not post-remediation evidence. A complete effective-permission assessment was not supplied.
 
 ## MITRE ATT&CK
 

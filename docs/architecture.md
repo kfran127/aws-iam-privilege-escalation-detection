@@ -40,7 +40,7 @@ Inputs containing `detail` use the backward-compatible EventBridge-shaped test p
 
 ## Permissions and configuration evidence
 
-[Screenshot 12](../screenshots/12-cloudwatch-subscription-filter.png) shows one subscription filter and the console confirmation that events are streamed to Lambda. The filter pattern and destination ARN are truncated in the screenshot; their complete values cannot be independently reconstructed from this evidence.
+[Screenshot 10](../screenshots/10-cloudwatch-subscription-filter.png) shows one subscription filter and the console confirmation that events are streamed to Lambda. The filter pattern and destination ARN are truncated in the screenshot; their complete values cannot be independently reconstructed from this evidence.
 
 [Screenshot 05](../screenshots/05-lambda-least-privilege-policy.png) shows an `sns:Publish` statement scoped to the alerts topic, in the `PowerUserRole` policy editor. It supports the existence of a scoped publish statement, but does not establish the complete attached policy set or a fully least-privilege execution role. No IAM policy or infrastructure export was supplied.
 

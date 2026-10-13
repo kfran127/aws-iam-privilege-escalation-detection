@@ -6,11 +6,11 @@ The original design explored EventBridge for IAM event delivery. In this lab, gl
 
 The pipeline was redesigned to use the multi-region CloudTrail trail's delivery to CloudWatch Logs. A log subscription then invoked the Python Lambda detector. The October 12 real AdministratorAccess attachment produced an SNS email through this revised path.
 
-EventBridge-shaped test payload support remains in the function for compatibility. It is not part of the final architecture. Screenshots 08 and 09 were excluded from the evidence set to keep the working architecture clear.
+EventBridge-shaped test payload support remains in the function for compatibility. It is not part of the final architecture. Images documenting the abandoned EventBridge approach were excluded from the evidence set to keep the working architecture clear.
 
 ## Separate rule logic from transport verification
 
-A successful Lambda console test demonstrates behavior for the supplied payload. It does not prove that real CloudTrail records arrive through the deployed subscription. Screenshots 06 and 07 document synthetic testing; screenshot 13 documents a real IAM event and delivered notification. These evidence types answer different questions and should remain explicitly labeled.
+A successful Lambda console test demonstrates behavior for the supplied payload. It does not prove that real CloudTrail records arrive through the deployed subscription. Screenshots 06 and 07 document synthetic testing; screenshot 11 documents a real IAM event and delivered notification. These evidence types answer different questions and should remain explicitly labeled.
 
 ## Preserve event provenance
 

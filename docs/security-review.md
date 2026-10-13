@@ -17,11 +17,11 @@ All 12 PNGs were visually inspected. Blurred areas were assessed as rendered; th
 | `05-lambda-least-privilege-policy.png` | Topic ARN account portion obscured; no credentials visible. Role/policy names remain visible. |
 | `06-lambda-detection-test.png` | Synthetic account ID `123456789012`, synthetic actor and event ID visible. These are test data; do not confuse with real account evidence. |
 | `07-sns-security-alert.png` | Same synthetic identity and documentation-range IP as screenshot 06. No unsubscribe URL visible within the supplied image. |
-| `10-real-iam-cloudtrail-events.png` | AWS-managed policy ARN has no customer account ID; real event IDs visible. No readable secrets observed. |
-| `11-lambda-cloudwatch-detection-code.png` | Function ARN obscured; code references `SNS_TOPIC_ARN`, not a literal topic ARN. No readable secret observed. |
-| `12-cloudwatch-subscription-filter.png` | Log-group ARN obscured; destination truncated. No full account-specific destination readable. |
-| `13-real-iam-privilege-escalation-alert.png` | Account portion and SNS unsubscribe URL obscured. Assumed-role name and session identifier remain visible; consider redacting the session suffix. VPN IP may remain per owner instruction. Verify unsubscribe URL coverage before public release. |
-| `14-iam-privilege-remediation.png` | Log-group ARN account portion obscured. AWS-managed policy ARN and event ID visible; no readable credentials observed. |
+| `08-real-iam-cloudtrail-events.png` | AWS-managed policy ARN has no customer account ID; real event IDs visible. No readable secrets observed. |
+| `09-lambda-cloudwatch-detection-code.png` | Function ARN obscured; code references `SNS_TOPIC_ARN`, not a literal topic ARN. No readable secret observed. |
+| `10-cloudwatch-subscription-filter.png` | Log-group ARN obscured; destination truncated. No full account-specific destination readable. |
+| `11-real-iam-privilege-escalation-alert.png` | Account portion and SNS unsubscribe URL obscured. Assumed-role name and session identifier remain visible; consider redacting the session suffix. VPN IP may remain per owner instruction. Verify unsubscribe URL coverage before public release. |
+| `12-iam-privilege-remediation.png` | Log-group ARN account portion obscured. AWS-managed policy ARN and event ID visible; no readable credentials observed. |
 
 ## Source and fixture review
 
@@ -31,7 +31,7 @@ No environment file, credential file, raw email, deployment package, or unrelate
 
 ## Final verification
 
-- All 12 expected PNG filenames are present; screenshots 08 and 09 are absent as intended.
+- All 12 expected PNG files are present and numbered continuously from 01 to 12.
 - Screenshot 01 is byte-identical to the owner-supplied replacement. The other 11 images match their source files byte-for-byte.
 - Lambda source is byte-identical to the supplied export. SHA-256: `c30beb4c3457b70d263cb99796060a321fbf45019ee1949f616905169a2d0c7f`.
 - All 33 local Markdown and image links resolve.
@@ -41,18 +41,18 @@ No environment file, credential file, raw email, deployment package, or unrelate
 
 ## Owner review before publication
 
-No additional readable account ID, credential, personal email endpoint, or unsubscribe URL was identified in the supplied images. Existing masking in screenshots 04 and 13 covers their values at normal inspection resolution. The real assumed-role session suffix remains visible in screenshot 13; removing it is an optional privacy improvement. The VPN IP remains visible as authorized.
+No additional readable account ID, credential, personal email endpoint, or unsubscribe URL was identified in the supplied images. Existing masking in screenshots 04 and 11 covers their values at normal inspection resolution. The real assumed-role session suffix remains visible in screenshot 11; removing it is an optional privacy improvement. The VPN IP remains visible as authorized.
 
 The owner explicitly approved publication of the complete project to the named GitHub repository after final review. No original image was edited. This review records the pre-publication checks; it is not a forensic guarantee about obscured pixels.
 
 ## Local README refinement review
 
-The subsequent presentation refinement is local and awaits explicit approval before a push. Only Markdown documentation changed; source, test logic, fixture, screenshots, and recorded event IDs remain unchanged.
+The prior README refinement was approved and published. The current screenshot renumbering and expanded README evidence presentation are local and await explicit approval before a push. Screenshot filenames and Markdown references changed; image contents, source, test logic, fixture, and recorded event IDs remain unchanged.
 
 - Reran the existing suite: all 22 simulated tests passed.
 - Verified all 37 relative Markdown/image links across the README, docs, and test documentation.
 - Rendered the revised Mermaid diagram locally with Mermaid 11; all six required nodes appeared without errors.
-- Reviewed a GitHub-style Markdown preview at desktop and 390-pixel mobile widths. Tables remain scrollable, the primary alert image loads, and supporting evidence is accessible through a collapsible section. This preview is an approximation; the revised Markdown has not been pushed for a fresh GitHub rendering check.
-- Scanned documentation for secret patterns and account IDs; no new sensitive value was found. Protected files match the published commit byte-for-byte, retaining the previously reviewed masking and authorized VPN IP.
+- Reviewed a GitHub-style Markdown preview at desktop and 390-pixel mobile widths. Tables remain scrollable, all five embedded evidence images load, and screenshots 01–07 remain supporting links in a collapsible section. This preview is an approximation; the revised Markdown has not been pushed for a fresh GitHub rendering check.
+- Scanned documentation for secret patterns and account IDs; no new sensitive value was found. Source and tests match the published commit byte-for-byte; each renamed screenshot matches its corresponding prior image byte-for-byte, retaining the previously reviewed masking and authorized VPN IP.
 
 [Back to README](../README.md)

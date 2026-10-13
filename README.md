@@ -89,18 +89,33 @@ The approximately **1-minute-42-second** interval measures event-to-manual-conta
 
 ### Primary evidence: real CRITICAL alert
 
-![Real CRITICAL SNS alert from the October 12 authorized IAM test](screenshots/13-real-iam-privilege-escalation-alert.png)
+![11 — Real CRITICAL SNS alert from the October 12 authorized IAM test](screenshots/11-real-iam-privilege-escalation-alert.png)
 
-*13 — Delivered SNS email showing the CRITICAL classification, target, initiating identity, event time, region, and final test's CloudTrail event ID.*
+*11 — Delivered SNS email showing the CRITICAL classification, target, initiating identity, event time, region, and final test's CloudTrail event ID.*
 
-### Telemetry, implementation, and manual containment
+### Telemetry: real IAM CloudTrail activity
 
-| Evidence | What the screenshot proves |
-|---|---|
-| [10 — Real IAM CloudTrail activity](screenshots/10-real-iam-cloudtrail-events.png) | Earlier real attachment and detachment events. Their IDs differ from the final test; this is supporting telemetry evidence. |
-| [11 — Deployed Lambda implementation](screenshots/11-lambda-cloudwatch-detection-code.png) | Console code showing subscription decoding and SNS publication. |
-| [12 — Working subscription filter](screenshots/12-cloudwatch-subscription-filter.png) | The named log subscription and confirmation of streaming to Lambda. |
-| [14 — Manual privilege removal](screenshots/14-iam-privilege-remediation.png) | The final test's `DetachUserPolicy` event for the same user and AdministratorAccess policy. |
+![08 — Real IAM attachment and detachment activity in CloudTrail logs](screenshots/08-real-iam-cloudtrail-events.png)
+
+*08 — Earlier real attachment and detachment events confirm IAM telemetry in CloudWatch Logs. Their event IDs differ from the final test; this image does not prove the final alert's event correlation.*
+
+### Log delivery: CloudWatch subscription filter
+
+![10 — CloudWatch Logs subscription delivering events to Lambda](screenshots/10-cloudwatch-subscription-filter.png)
+
+*10 — The named log subscription and console confirmation of streaming to Lambda establish the working delivery mechanism. The full filter pattern and destination ARN are truncated.*
+
+### Detection implementation: deployed Lambda
+
+![09 — Deployed Lambda subscription decoding and SNS publication code](screenshots/09-lambda-cloudwatch-detection-code.png)
+
+*09 — Console code shows base64/gzip subscription decoding, CloudTrail record processing, and SNS publication. The unchanged export is available in the source directory.*
+
+### Manual containment: IAM privilege removal
+
+![12 — CloudTrail records manual removal of AdministratorAccess](screenshots/12-iam-privilege-remediation.png)
+
+*12 — The final test's `DetachUserPolicy` event records removal of AdministratorAccess from the same user. This proves the manual removal event; final-state inventory checks were confirmed separately by the operator.*
 
 <details>
 <summary>Supporting evidence — configuration, baseline, and simulated tests</summary>
@@ -117,7 +132,7 @@ The approximately **1-minute-42-second** interval measures event-to-manual-conta
 
 </details>
 
-All 12 filenames are preserved. Screenshots 08 and 09 are intentionally excluded because they document the abandoned EventBridge approach.
+All 12 screenshots are numbered sequentially from 01 to 12. Images documenting the abandoned EventBridge approach are not included.
 
 ## MITRE ATT&CK mapping
 
