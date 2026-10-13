@@ -35,7 +35,7 @@ No environment file, credential file, raw email, deployment package, or unrelate
 - Screenshot 01 is byte-identical to the owner-supplied replacement. The other 11 images match their source files byte-for-byte.
 - Lambda source is byte-identical to the supplied export. SHA-256: `c30beb4c3457b70d263cb99796060a321fbf45019ee1949f616905169a2d0c7f`.
 - All 33 local Markdown and image links resolve.
-- Both Mermaid blocks were checked for valid basic flowchart syntax, unique node identifiers, closed quoted labels, and the exact required six-node path. GitHub rendering was not tested on a remote repository.
+- Both Mermaid blocks were checked for valid basic flowchart syntax, unique node identifiers, closed quoted labels, and the exact required six-node path. The original diagram rendered correctly on GitHub after publication. The refined labels were subsequently verified with Mermaid 11 in a local preview.
 - All 22 offline unit tests passed using Python 3.14.6. No live AWS calls were made.
 - Text scanning found only explicitly synthetic account-specific ARNs in the test files; no credential or secret pattern was found in the supplied source.
 
@@ -44,5 +44,15 @@ No environment file, credential file, raw email, deployment package, or unrelate
 No additional readable account ID, credential, personal email endpoint, or unsubscribe URL was identified in the supplied images. Existing masking in screenshots 04 and 13 covers their values at normal inspection resolution. The real assumed-role session suffix remains visible in screenshot 13; removing it is an optional privacy improvement. The VPN IP remains visible as authorized.
 
 The owner explicitly approved publication of the complete project to the named GitHub repository after final review. No original image was edited. This review records the pre-publication checks; it is not a forensic guarantee about obscured pixels.
+
+## Local README refinement review
+
+The subsequent presentation refinement is local and awaits explicit approval before a push. Only Markdown documentation changed; source, test logic, fixture, screenshots, and recorded event IDs remain unchanged.
+
+- Reran the existing suite: all 22 simulated tests passed.
+- Verified all 37 relative Markdown/image links across the README, docs, and test documentation.
+- Rendered the revised Mermaid diagram locally with Mermaid 11; all six required nodes appeared without errors.
+- Reviewed a GitHub-style Markdown preview at desktop and 390-pixel mobile widths. Tables remain scrollable, the primary alert image loads, and supporting evidence is accessible through a collapsible section. This preview is an approximation; the revised Markdown has not been pushed for a fresh GitHub rendering check.
+- Scanned documentation for secret patterns and account IDs; no new sensitive value was found. Protected files match the published commit byte-for-byte, retaining the previously reviewed masking and authorized VPN IP.
 
 [Back to README](../README.md)

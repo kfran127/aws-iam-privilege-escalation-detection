@@ -1,13 +1,19 @@
 # Architecture and implementation
 
+## Security problem and objectives
+
+IAM permission changes can expand an identity's access without deploying new infrastructure. Analysts need actionable context to distinguish approved administration from unexpected privilege changes.
+
+This lab collects IAM management activity, evaluates selected high-risk changes in Python, and preserves actor, target, source IP, event time, region, and event ID for investigation. It demonstrates detection and manual incident response in an authorized environment; it does not demonstrate an account compromise.
+
 ## Working data flow
 
 ```mermaid
 flowchart LR
     CT["CloudTrail"] --> CW["CloudWatch Logs"]
     CW --> SF["Subscription Filter"]
-    SF --> LF["Lambda"]
-    LF --> SNS["SNS"]
+    SF --> LF["Lambda (Python)"]
+    LF --> SNS["Amazon SNS"]
     SNS --> EM["Email"]
 ```
 

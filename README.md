@@ -1,15 +1,20 @@
 # AWS IAM Privilege Escalation Detection & Incident Response
 
-An AWS-native detection lab that identifies high-risk IAM permission changes, publishes structured findings, and delivers email alerts. A controlled AdministratorAccess attachment on October 12, 2026 validated the complete telemetry-to-notification path. Containment was performed manually and recorded in CloudTrail.
+An AWS-native security lab that detects selected high-risk IAM permission changes and delivers structured email alerts. An authorized AdministratorAccess attachment on October 12, 2026 validated the complete CloudTrail-to-SNS path, followed by investigation and manual containment. Three rules are implemented; only the AdministratorAccess attachment rule has real AWS end-to-end validation.
 
-**Verified:** real `AttachUserPolicy` event → CRITICAL finding → SNS email.  
-**Scope:** three implemented rules; only the AdministratorAccess attachment was validated end-to-end in AWS.
+## Key project outcomes
 
-## Security problem and objectives
+**Real AWS validation — authorized lab**
 
-IAM permission changes can expand an identity's access without deploying new infrastructure. Analysts need actionable context to distinguish approved administration from unexpected privilege changes.
+- Detected a real IAM `AttachUserPolicy` event and classified the AdministratorAccess attachment as **CRITICAL**.
+- Automatically delivered a structured Amazon SNS email alert with identity and event context.
+- Investigated the permission change using CloudTrail evidence.
+- Manually removed the elevated permission and correlated the removal event.
+- Verified the test user's post-remediation state: zero directly attached policies, no group memberships, and no access keys. These checks were confirmed by the operator; the removal screenshot proves the detach event.
 
-This lab collects IAM management activity, evaluates selected high-risk changes in Python, and preserves actor, target, source IP, event time, region, and event ID for investigation. It demonstrates detection and manual incident response in an authorized environment; it does not demonstrate an account compromise.
+**Local code validation — simulated inputs**
+
+- Passed **22 offline unit tests** covering rule matches, exclusions, subscription payload handling, SNS publication, and documented failure behavior. These tests do not extend the other two rules' AWS validation status.
 
 ## Architecture
 
@@ -17,122 +22,132 @@ This lab collects IAM management activity, evaluates selected high-risk changes 
 flowchart LR
     CT["CloudTrail"] --> CW["CloudWatch Logs"]
     CW --> SF["Subscription Filter"]
-    SF --> LF["Lambda"]
-    LF --> SNS["SNS"]
+    SF --> LF["Lambda (Python)"]
+    LF --> SNS["Amazon SNS"]
     SNS --> EM["Email"]
 ```
 
-CloudTrail is multi-region. The processing resources are deployed in **us-east-2 (Ohio)**; global IAM events may carry `awsRegion: us-east-1`. Preserve the event's region as evidence rather than substituting the deployment region. EventBridge is not in the working pipeline.
+The multi-region CloudTrail trail feeds processing resources in **us-east-2 (Ohio)**. Global IAM events may report `awsRegion: us-east-1`; the finding preserves that original event region.
 
-| Service / technology | Lab resource or purpose |
+## Technologies used
+
+| Technology | Resource / role |
 |---|---|
-| AWS CloudTrail | `aws-auth-detection-trail`; IAM management telemetry |
-| Amazon CloudWatch Logs | `aws-auth-detection-logs`; log storage and investigation |
-| Logs subscription filter | `iam-security-event-filter`; delivery to Lambda |
-| AWS Lambda / Python | `iam-privilege-escalation-detector`; custom detection engine |
-| Amazon SNS | `iam-privilege-escalation-alerts`; email notification |
-| AWS IAM | `lab-iam-test-user`; controlled permission-change target |
-| Python standard library / boto3 | Payload decoding, JSON processing, SNS publish |
-
-[Architecture and implementation details](docs/architecture.md)
+| AWS CloudTrail | `aws-auth-detection-trail` — management telemetry |
+| Amazon CloudWatch Logs | `aws-auth-detection-logs` — collection and investigation |
+| Logs subscription filter | `iam-security-event-filter` — delivery to Lambda |
+| AWS Lambda / Python | `iam-privilege-escalation-detector` — detection engine |
+| Amazon SNS | `iam-privilege-escalation-alerts` — email notification |
+| AWS IAM | `lab-iam-test-user` — controlled test target |
+| Python / boto3 | Base64, gzip, JSON, and SNS publication |
 
 ## Detection rules
 
-All rules require `eventSource == iam.amazonaws.com` and no truthy `errorCode`.
+Each rule requires `eventSource == iam.amazonaws.com` and no truthy `errorCode`.
 
-| API event | Exact detection condition | Severity | Real AWS validation |
+| API event | Detection condition | Severity | AWS validation |
 |---|---|---|---|
-| `AttachUserPolicy` | AWS-managed `AdministratorAccess` attached to an IAM user | CRITICAL | End-to-end validated |
-| `AddUserToGroup` | User added to `lab-privileged-admins` | HIGH | Not end-to-end validated |
-| `CreatePolicyVersion` | New default version of `lab-privileged-policy` | HIGH | Not end-to-end validated |
+| `AttachUserPolicy` | AWS-managed `AdministratorAccess` attached to a user | CRITICAL | End-to-end validated |
+| `AddUserToGroup` | User added to `lab-privileged-admins` | HIGH | Not validated end-to-end |
+| `CreatePolicyVersion` | New default version of `lab-privileged-policy` | HIGH | Not validated end-to-end |
 
-[Rule predicates, triage, and coverage boundaries](docs/detection-rules.md)
+Exact predicates, matching boundaries, and triage guidance are in [detection rules](docs/detection-rules.md).
 
-## Implementation
+## Implementation overview
 
-The [exported Lambda source](src/lambda_function.py) is preserved unchanged. The handler decodes the subscription event's base64 data, decompresses gzip, and parses each log message as a CloudTrail JSON record. It ignores control messages and evaluates each record with `analyze_event`.
+The unchanged [Lambda export](src/lambda_function.py) decodes base64 subscription data, decompresses gzip, and parses each log message as a CloudTrail JSON record. It ignores control messages and failed IAM API calls, then evaluates the three rules.
 
-Matching findings are printed as JSON and published to SNS using `SNS_TOPIC_ARN`. Alerts include severity, reason, actor ARN, target, source IP, timestamp, API name, AWS region, and CloudTrail event ID. Original EventBridge-shaped test inputs remain supported for backward compatibility.
+Matching findings are printed as JSON and published to the topic configured through `SNS_TOPIC_ARN`. Each alert includes severity, reason, actor ARN, target, source IP, event time, API name, AWS region, and event ID.
 
-## Controlled simulation and response
+EventBridge was an earlier architectural experiment. Regional IAM event-delivery constraints and the lab's AWS Free plan region restriction led to the working CloudWatch Logs subscription design. The export retains EventBridge-shaped test-input compatibility. [Architecture details](docs/architecture.md) and [engineering lessons](docs/lessons-learned.md) explain the decision.
 
-The lab operator attached `arn:aws:iam::aws:policy/AdministratorAccess` to `lab-iam-test-user`. CloudTrail delivery and the subscription filter invoked Lambda, which classified the change as CRITICAL. SNS delivered an email with subject **`[CRITICAL] AWS IAM Privilege Change`**.
+## Real AWS test and investigation
 
-| Step | UTC — October 12, 2026 | EDT — October 12, 2026 | Evidence |
-|---|---|---|---|
-| AdministratorAccess attached | 23:37:33 | 19:37:33 | Event `af73f570-2212-4354-b5c8-8206bfbeeca4` |
-| CRITICAL email received | Exact delivery timestamp not retained; UI shows 19:39 EDT | 19:39 (minute precision) | Screenshot 13 |
-| Policy manually detached | Approximately 23:39:15 | Approximately 19:39:15 | Event `713773e9-88a1-4d9e-bb5d-ac06837d003f` |
-| Post-test verification | Exact time not recorded | Exact time not recorded | Operator confirmed zero direct policies, no groups, no access keys |
+The operator attached `arn:aws:iam::aws:policy/AdministratorAccess` to `lab-iam-test-user`. CloudTrail delivery and the subscription filter invoked Lambda; the detector generated a CRITICAL finding, and SNS delivered an email with subject **`[CRITICAL] AWS IAM Privilege Change`**.
 
-The event-to-containment interval is approximately **1 minute 42 seconds**. This is a single manual-response observation, not a detection-latency measurement or performance benchmark.
+Investigation correlated the target, initiating identity, policy, source IP, event region, and event ID. The operator then detached the policy manually and verified the test user's access state. This was an authorized simulation; no actual account compromise occurred, and no automated remediation is claimed.
 
-[Full incident report](docs/incident-report.md)
+## Incident response timeline
 
-## Evidence
+All entries are on **October 12, 2026**. EDT is UTC−04:00.
 
-### Real detection and containment
+| Activity | UTC | EDT |
+|---|---|---|
+| AdministratorAccess attached | 23:37:33 | 19:37:33 |
+| CRITICAL SNS email observed | Approx. 23:39 | Approx. 19:39; UI has minute precision |
+| Policy manually removed | Approx. 23:39:15 | Approx. 19:39:15 |
+| Post-test access verification | Time not recorded | Time not recorded |
 
-![Real CRITICAL SNS alert](screenshots/13-real-iam-privilege-escalation-alert.png)
+CloudTrail event IDs:
 
-*13 — Email from the final real IAM test; the event ID, target, severity, and event time are visible.*
+- **Attachment:** `af73f570-2212-4354-b5c8-8206bfbeeca4`
+- **Removal:** `713773e9-88a1-4d9e-bb5d-ac06837d003f`
 
-![CloudTrail policy removal](screenshots/14-iam-privilege-remediation.png)
+The approximately **1-minute-42-second** interval measures event-to-manual-containment time in this exercise. It is not measured detection latency, an SLA, or a performance benchmark. See the [incident report](docs/incident-report.md) for evidence provenance and timestamp limits.
 
-*14 — CloudTrail records manual removal of AdministratorAccess from the test user.*
+## Evidence screenshots
 
-### Pipeline and supporting IAM activity
+### Primary evidence: real CRITICAL alert
 
-| Evidence | What it demonstrates |
+![Real CRITICAL SNS alert from the October 12 authorized IAM test](screenshots/13-real-iam-privilege-escalation-alert.png)
+
+*13 — Delivered SNS email showing the CRITICAL classification, target, initiating identity, event time, region, and final test's CloudTrail event ID.*
+
+### Telemetry, implementation, and manual containment
+
+| Evidence | What the screenshot proves |
 |---|---|
-| [10 — Real IAM CloudTrail events](screenshots/10-real-iam-cloudtrail-events.png) | Earlier real attachment/detachment activity, with different event IDs from the final test |
-| [11 — Lambda detection implementation](screenshots/11-lambda-cloudwatch-detection-code.png) | Subscription decoding and SNS publication in the deployed console code |
-| [12 — Subscription filter](screenshots/12-cloudwatch-subscription-filter.png) | Log group subscription streaming to Lambda |
+| [10 — Real IAM CloudTrail activity](screenshots/10-real-iam-cloudtrail-events.png) | Earlier real attachment and detachment events. Their IDs differ from the final test; this is supporting telemetry evidence. |
+| [11 — Deployed Lambda implementation](screenshots/11-lambda-cloudwatch-detection-code.png) | Console code showing subscription decoding and SNS publication. |
+| [12 — Working subscription filter](screenshots/12-cloudwatch-subscription-filter.png) | The named log subscription and confirmation of streaming to Lambda. |
+| [14 — Manual privilege removal](screenshots/14-iam-privilege-remediation.png) | The final test's `DetachUserPolicy` event for the same user and AdministratorAccess policy. |
 
-### Configuration and simulated test evidence
+<details>
+<summary>Supporting evidence — configuration, baseline, and simulated tests</summary>
 
-| Evidence | Context |
+| Screenshot | Evidence scope |
 |---|---|
-| [01 — CloudTrail configuration](screenshots/01-cloudtrail-configuration.png) | Multi-region trail and logging enabled |
-| [02 — CloudWatch log analysis](screenshots/02-cloudwatch-log-analysis.png) | General telemetry query; not a detection-rate measurement |
-| [03 — IAM test-user baseline](screenshots/03-iam-test-user-baseline.png) | Empty permissions view before testing |
-| [04 — SNS alert configuration](screenshots/04-sns-alert-configuration.png) | Confirmed email subscription |
-| [05 — SNS publish policy](screenshots/05-lambda-least-privilege-policy.png) | Topic-scoped publish statement; does not prove the entire execution role is least privilege |
-| [06 — Lambda simulated detection test](screenshots/06-lambda-detection-test.png) | Console test using `simulated-event-001` |
-| [07 — Simulated SNS alert](screenshots/07-sns-security-alert.png) | Notification from the simulated payload, not the real October 12 event |
+| [01 — CloudTrail configuration](screenshots/01-cloudtrail-configuration.png) | Logging enabled on a multi-region trail; owner-supplied redacted image. |
+| [02 — CloudWatch analysis](screenshots/02-cloudwatch-log-analysis.png) | General telemetry query; not a detection-rate measurement. |
+| [03 — Test-user baseline](screenshots/03-iam-test-user-baseline.png) | Empty permissions view before testing; not post-remediation proof. |
+| [04 — SNS configuration](screenshots/04-sns-alert-configuration.png) | Confirmed email subscription. |
+| [05 — SNS publish policy](screenshots/05-lambda-least-privilege-policy.png) | Topic-scoped publish statement; not proof of the entire role's least privilege. |
+| [06 — Simulated Lambda test](screenshots/06-lambda-detection-test.png) | Successful console invocation with `simulated-event-001`. |
+| [07 — Simulated SNS alert](screenshots/07-sns-security-alert.png) | Delivered alert from that synthetic payload; not the real October 12 event. |
 
-Original filenames are retained. Screenshots 08 and 09 are intentionally excluded because they describe the abandoned EventBridge approach.
+</details>
+
+All 12 filenames are preserved. Screenshots 08 and 09 are intentionally excluded because they document the abandoned EventBridge approach.
 
 ## MITRE ATT&CK mapping
 
-**[T1098.003 — Account Manipulation: Additional Cloud Roles](https://attack.mitre.org/techniques/T1098/003/)** covers adding cloud roles or permissions. Attaching AdministratorAccess expands an existing IAM user's permissions and is behaviorally aligned with this technique. The parent is [T1098 — Account Manipulation](https://attack.mitre.org/techniques/T1098/).
+Attaching AdministratorAccess expands an existing IAM user's permissions, aligning with **[T1098.003 — Account Manipulation: Additional Cloud Roles](https://attack.mitre.org/techniques/T1098/003/)**, under [T1098 — Account Manipulation](https://attack.mitre.org/techniques/T1098/).
 
-The mapping describes the simulated action. It does not establish malicious persistence, initial access, compromised credentials, or unauthorized activity.
+The mapping describes the observed permission modification. It does not establish unauthorized access or malicious persistence.
 
-## Verification
+## Limitations and future improvements
 
-Run the offline simulated tests from the repository root:
+- **Narrow coverage:** exact policy/group matches do not evaluate policy contents or effective permissions, and omit other escalation paths.
+- **Operational limits:** no event-ID deduplication, per-record error isolation, or caught SNS errors. Malformed input or publication failure can interrupt a batch; repeated delivery can repeat alerts.
+- **Validation limits:** one rule was tested end-to-end in AWS. No sustained-load test or delivery SLA was established. Containment remains manual.
+
+Proposed improvements include real AWS validation of both HIGH rules, approval correlation, effective-permission context, deduplication, failure handling, pipeline health monitoring, and reviewed infrastructure as code. These are future work, not deployed capabilities.
+
+## Supporting documentation and tests
+
+| Reference | Details |
+|---|---|
+| [Architecture](docs/architecture.md) | Security objectives, payload processing, permissions evidence, and configuration boundaries |
+| [Detection rules](docs/detection-rules.md) | Exact source predicates, finding schema, and triage |
+| [Incident report](docs/incident-report.md) | UTC/EDT timeline, investigation, response, and final-state evidence limits |
+| [Lessons learned](docs/lessons-learned.md) | Telemetry troubleshooting and engineering decisions |
+| [Security review](docs/security-review.md) | Screenshot privacy review and source inspection |
+| [Offline test scope](tests/README.md) | Synthetic fixtures, mocked SNS calls, and current code behavior |
+
+Run from the repository root:
 
 ```sh
 python3 -m unittest discover -s tests -v
 ```
 
-The suite uses synthetic CloudTrail records, compressed subscription payloads, and a mocked boto3 SNS client. It needs no AWS credentials or third-party installation. These unit tests validate code behavior locally; they do not extend the two HIGH rules' real AWS validation status. See [test scope](tests/README.md).
-
-## Security considerations and limitations
-
-- Exact policy/group matches cover a narrow set of changes, not every privilege-escalation path. Policy contents and effective permissions are not evaluated.
-- The source has no event-ID deduplication, per-record error isolation, or caught SNS publication failures. Malformed input or an SNS exception can interrupt a batch; repeated delivery may produce repeated alerts.
-- Notification delivery depends on the logging pipeline, Lambda permissions, SNS configuration, and confirmed email subscription. No delivery SLA or sustained-load test was established.
-- The lab detects and alerts. It does not perform automated containment.
-- All evidence was inspected for readable account identifiers, credentials, personal endpoints, and unsubscribe URLs. Screenshot 01 uses the owner-supplied redacted replacement. See the [security review](docs/security-review.md) before approving public release.
-
-## Engineering lessons
-
-An initial EventBridge design encountered regional delivery constraints for global IAM events in Ohio, compounded by the AWS Free plan's region restriction in this lab. The pipeline was redesigned around CloudTrail delivery to CloudWatch Logs and a Lambda subscription. Real IAM activity validated the revised path.
-
-The central lessons were to verify telemetry delivery separately from rule logic, preserve the difference between event region and processing region, and distinguish synthetic tests from end-to-end evidence. [Engineering decision and lessons](docs/lessons-learned.md)
-
-## Future improvements
-
-Validate the two HIGH rules in AWS; add effective-permission context and approval correlation; implement event-ID deduplication and per-record error handling; monitor pipeline health and publish failures; and codify reviewed infrastructure and least-privilege permissions. These are proposed improvements, not deployed capabilities.
+The tests need no live AWS credentials or third-party installation. They validate simulated code behavior separately from the completed real AWS test.
