@@ -1,5 +1,7 @@
 # AWS IAM Privilege Escalation Detection & Incident Response
 
+![AWS IAM Detection & Incident Response overview](assets/aws-detection-overview.png)
+
 An AWS-native security lab that detects selected high-risk IAM permission changes and delivers structured email alerts. An authorized AdministratorAccess attachment on October 12, 2026 validated the complete CloudTrail-to-SNS path, followed by investigation and manual containment. Three rules are implemented; only the AdministratorAccess attachment rule has real AWS end-to-end validation.
 
 ## Key project outcomes
