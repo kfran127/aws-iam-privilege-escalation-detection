@@ -14,9 +14,6 @@ An AWS-native security lab that detects selected high-risk IAM permission change
 - Manually removed the elevated permission and correlated the removal event.
 - Verified the test user's post-remediation state: zero directly attached policies, no group memberships, and no access keys. These checks were confirmed by the operator; the removal screenshot proves the detach event.
 
-**Local code validation — simulated inputs**
-
-- Passed **22 offline unit tests** covering rule matches, exclusions, subscription payload handling, SNS publication, and documented failure behavior. These tests do not extend the other two rules' AWS validation status.
 
 ## Architecture
 
